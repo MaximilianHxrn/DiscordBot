@@ -7,7 +7,7 @@
 
 A Discord Bot that has a lot of helpful Features.
 
-# ![Drag Racing](https://i.pinimg.com/474x/91/df/5a/91df5accc87c610dcbef7c672f709643.jpg)
+# https://i.pinimg.com/474x/91/df/5a/91df5accc87c610dcbef7c672f709643.jpg
 
 # Setup
 
