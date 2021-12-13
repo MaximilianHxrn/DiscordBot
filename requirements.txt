@@ -24,7 +24,7 @@ jokeapi==0.2.10
 jokes==0.1.7
 libcst==0.3.17
 loguru==0.5.3
-lxml==4.6.3
+lxml==4.6.5
 multidict==5.1.0
 mypy-extensions==0.4.3
 oauth2==1.9.0.post1
