@@ -2,21 +2,22 @@ import asyncio
 from asyncio import tasks
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
+import cloudscraper
+# from dotenv import load_dotenv
 import random
 import os
 import requests
 import re
-import translators as ts
+# import translators as ts
 import sqlite3 as sl
 
-load_dotenv()
+# load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 NASA_TOKEN = os.getenv('NASA_TOKEN')
 WEATHER_TOKEN = os.getenv('WEATHER_TOKEN')
 TWITTER_TOKEN = os.getenv('TWITTER_TOKEN')
 
-options = {"!help", "!cat", "!stats <optional with name>", "!botinfo", "!init_daily (Can only be started once) <channelID>", "!dog", "!steam <YourSteamLink>", "!print <YourText>", "!donate", "!weather <cityName>", "!ip <ip-address>", "!translate <YourText>", "!pin <message_id>", "!joke", "!fuckoff", "!Russisch Roulette", "!CoinFlip", "!clear <quantity (limit = 10)>", "!clear_message <message_id>", "!embed <YourText>", "!quote <YourText>"}
+options = {"!help", "!cat", "!stats <optional with name>", "!botinfo", "!init_daily (Can only be started once) <channelID>", "!dog", "!steam <YourSteamLink>", "!print <YourText>", "!donate", "!weather <cityName>", "!ip <ip-address>", "!translate <YourText>", "!pin <message_id>", "!joke", "!fuckoff", "!Russisch Roulette", "!CoinFlip", "!clear <quantity (limit = 10)>", "!clear_message <message_id>", "!embed <YourText>", "!quote <YourText>", "!FaceIt <SteamLink>"}
 options = sorted(options, key=str.lower)
 
 actions = ['awesome/', 'because/', 'bye/', 'cool/', 'diabetes/', 'everyone/', 'everything/', 'fascinating/', 'flying/', 'life/', 'pink/', 'thanks/', 'that/', 'this/', 'what/']
@@ -237,8 +238,31 @@ async def steam(message, link):
     await clear_func_call(message)
     if "http" in link:
         link = link[36:-1]
-    response = await request_call("https://steamsignature.com/sig/" + link + "/", "value=\"http://steamsignature.com/card/0/.*.png", 7 ,0)
+    response = await request_call("https://steamsignature.com/sig/" + link + "/", "id=\"link_status\" value=\"http://www.steamsignature.com/status/default/.*\.png", 24,0)
     await message.channel.send(response)
+
+async def faceit(message, link):
+    await clear_func_call(message)
+    if "steamcommunity" in link:
+        try:
+            temp = re.search("\/id\/.*", link).group(0)[4:-1]
+            temp = await request_call("https://www.steamidfinder.com/lookup/" + temp, "<br>steamID64 \(Dec\): <code>.*</code>", 27, -7) 
+        except:
+            temp = re.search("\/profiles\/.*", link).group(0)[10:-1]
+    else:
+        try:
+            temp = re.search("[0-9].*", link).group(0)
+        except:
+            temp = await request_call("https://www.steamidfinder.com/lookup/" + link, "<br>steamID64 \(Dec\): <code>.*</code>", 27, -7) 
+
+    # "https://steamcommunity.com/id/datharibo/"
+    # "https://steamcommunity.com/profiles/76561198098351332/"
+    # "datharibo"
+    # "76561198098351332"
+
+    response = await request_call("https://faceitfinder.com/profile/" + temp, "content=\"Player.*ratio\.", 9, 0, True)
+    await message.channel.send(response)
+
 
 async def dog(message):
     await clear_func_call(message)
@@ -294,11 +318,14 @@ async def stats_all(message):
     x = out.replace("), (", "\n")
     await message.channel.send(list)
 
-
-async def request_call(url="", search="", startOffset=0,endOffset=0):
+async def request_call(url="", search="", startOffset=0,endOffset=0, useCloud=False):
     if url == "":
         return ""
-    response = requests.get(url).text
+    if useCloud:
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url).text
+    else:
+        response = requests.get(url).text
     if search != "":
         result = re.search(search, response)
     content = ""
@@ -341,6 +368,8 @@ async def on_message(message):
     temp[0] = temp[0].lower()
     if option == '!botinfo':
         await botinfo(message)
+    elif temp[0] == "!faceit":
+        await faceit(message, temp[1])
     elif temp[0] == '!print':
         await print_text(message, temp)
     elif option == '!russisch roulette':
@@ -399,5 +428,5 @@ async def on_message(message):
     con.commit()
     
 
-client.run(TOKEN)
+client.run("ODEzMTY1NTcxNzA0NjE5MDI4.YDLVdA.v-3DP_8ei1YvApcMgb1NeIxtrP4")
 con.close()
