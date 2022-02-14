@@ -3,15 +3,15 @@ from asyncio import tasks
 import discord
 from discord.ext import commands
 import cloudscraper
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import random
 import os
 import requests
 import re
-# import translators as ts
+import translators as ts
 import sqlite3 as sl
 
-# load_dotenv()
+load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 NASA_TOKEN = os.getenv('NASA_TOKEN')
 WEATHER_TOKEN = os.getenv('WEATHER_TOKEN')
@@ -254,15 +254,20 @@ async def faceit(message, link):
             temp = re.search("[0-9].*", link).group(0)
         except:
             temp = await request_call("https://www.steamidfinder.com/lookup/" + link, "<br>steamID64 \(Dec\): <code>.*</code>", 27, -7) 
-
-    # "https://steamcommunity.com/id/datharibo/"
-    # "https://steamcommunity.com/profiles/76561198098351332/"
-    # "datharibo"
-    # "76561198098351332"
-
-    response = await request_call("https://faceitfinder.com/profile/" + temp, "content=\"Player.*ratio\.", 9, 0, True)
+    response = await request_call("https://faceitfinder.com/profile/" + temp, "content=\"Player.*ratio\.", 9, 0, 1)
     await message.channel.send(response)
 
+async def google(message, query):
+    response = await request_call("http://www.google.de/search?q=" + query, "", 0, 0, 2)
+    result = ""
+    for m in re.finditer(re.compile("<a href=\".*?\"><h3 class=\".*?\"><div class=\".*?\">.*?<\/div>"), response):
+        temp = m.group(0)
+        link = re.search(">.*", re.search("<div class=.*?>.*?<\/div>", temp).group()[2:-1]).group()[1:-5]
+        if link.find("href=") == -1 and link.find("<div") == -1:
+            result += re.search("(q=http.*?&)", temp).group()[2:-1] + " " + link + "\n" 
+    embed = discord.Embed()
+    embed.description = result
+    await message.channel.send(embed=embed)
 
 async def dog(message):
     await clear_func_call(message)
@@ -318,12 +323,15 @@ async def stats_all(message):
     x = out.replace("), (", "\n")
     await message.channel.send(list)
 
-async def request_call(url="", search="", startOffset=0,endOffset=0, useCloud=False):
+async def request_call(url="", search="", startOffset=0,endOffset=0, useCloud=0):
     if url == "":
         return ""
-    if useCloud:
+    if useCloud == 1:
         scraper = cloudscraper.create_scraper()
         response = scraper.get(url).text
+    elif useCloud == 2:
+        cookies = dict(BCPermissionLevel='PERSONAL')
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, cookies=cookies).text
     else:
         response = requests.get(url).text
     if search != "":
@@ -410,12 +418,13 @@ async def on_message(message):
         await fact(message)
     elif option == '!cat':
         await cat(message)
+    elif temp[0] == "!google":
+        await google(message, '+'.join(temp[1:]))
     try:
         if temp[0] == '!stats' and temp[1] != '':
             await stats(message, temp[1])
     except:
         await stats_all(message)
-
     if temp[0] == '!stats':
         return
     temp_author = message.author.display_name
@@ -427,6 +436,5 @@ async def on_message(message):
         con.execute(sql)
     con.commit()
     
-
-client.run("ODEzMTY1NTcxNzA0NjE5MDI4.YDLVdA.v-3DP_8ei1YvApcMgb1NeIxtrP4")
+client.run(TOKEN)
 con.close()
